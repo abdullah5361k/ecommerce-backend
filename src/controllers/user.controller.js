@@ -1,6 +1,7 @@
 const { validationResult } = require("express-validator")
 const User = require("../models/user.model");
 const CustomErrors = require("../utils/errors");
+const bcrypt = require("bcrypt")
 
 exports.createUser = async (req, res, next) => {
     // Validaions
@@ -31,6 +32,48 @@ exports.createUser = async (req, res, next) => {
         message: "User created successfully",
         data: user
     })
+
+}
+
+// Signin 
+exports.logIn = async (req, res, next) => {
+    // Validaions
+    if (reqValidation(req, next)) {
+        return;
+    }
+    try {
+        const { email, password } = req.body;
+        // Check email exist in DB or not
+        const isEmailExist = await User.findOne({ email });
+        console.log("IS user ", isEmailExist)
+        // If email not exist
+        if (!isEmailExist) {
+            return next(new CustomErrors(400, "User with the provided email not exists"));
+        }
+        // Compare password
+        const match = await bcrypt.compare(password, isEmailExist.password)
+        console.log("match ", match)
+        if (!match) {
+            return next(new CustomErrors(400, "The password are incorrect"));
+        }
+
+        // Generate jwt
+        const jwtToken = isEmailExist.generateJwtToken();
+        console.log("login Token ", jwtToken);
+        isEmailExist.password = undefined;
+        // Send token in header
+        res.setHeader('Authorization', `Bearer ${jwtToken}`);
+        // send response
+        return res.status(201).json({
+            success: true,
+            message: "You are login successfully",
+            data: isEmailExist
+        })
+
+    } catch (err) {
+        console.log("ERR ", err.message)
+        return next(new CustomErrors(500, err.message))
+    }
 
 }
 

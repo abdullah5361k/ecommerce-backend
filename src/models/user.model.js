@@ -26,7 +26,7 @@ const userSchema = new Schema({
 userSchema.methods = {
     generateJwtToken: function () {
         const bodyPayload = { id: this._id, email: this.email }
-        return JWT.sign(bodyPayload, process.env.SECRET_KEY, { expiresIn: 15 * 60 });
+        return JWT.sign(bodyPayload, process.env.SECRET_KEY, { expiresIn: 45 * 60 });
     }
 }
 
